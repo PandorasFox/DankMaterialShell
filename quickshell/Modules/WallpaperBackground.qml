@@ -777,9 +777,6 @@ Variants {
             LockScrollSampler {
                 id: lockScrollSampler
                 screen: modelData
-                source: root.encodeFileUrl(SessionData.getMonitorWallpaper(modelData.name) || "")
-                imageWidth: imageMetrics.nativeWidth
-                imageHeight: imageMetrics.nativeHeight
             }
 
             QtObject {
