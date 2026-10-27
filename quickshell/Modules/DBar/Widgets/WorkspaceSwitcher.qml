@@ -674,8 +674,8 @@ BasePill {
                         const didReorder = wasDragging && root.dragTargetIndex >= 0 && root.dragTargetIndex !== root.dragSourceIndex;
 
                         if (didReorder) {
-                            const sourceWs = root.workspaceList[root.dragSourceIndex];
-                            const targetWs = root.workspaceList[root.dragTargetIndex];
+                            const sourceWs = root.recordOf(root.workspaceList[root.dragSourceIndex]);
+                            const targetWs = root.recordOf(root.workspaceList[root.dragTargetIndex]);
 
                             if (sourceWs && targetWs && sourceWs.id !== undefined && targetWs.idx !== undefined) {
                                 root.suppressShiftAnimation = true;
