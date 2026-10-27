@@ -93,7 +93,7 @@ QtObject {
     function slotList(raw) {
         const live = {};
         const slots = raw.map(ws => {
-            const key = ws.id > 0 ? ws.id : (ws.special ? "special:" : "name:") + (ws.name ?? "");
+            const key = ws.id !== null && ws.id !== undefined && !ws.special ? ws.id : (ws.special ? "special:" : "name:") + (ws.name ?? "");
             let slot = _slotPool[key];
             if (!slot) {
                 slot = _slotComponent.createObject(root);
