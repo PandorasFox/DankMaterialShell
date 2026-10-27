@@ -982,6 +982,7 @@ BasePill {
                                 Repeater {
                                     model: ScriptModel {
                                         values: loadedIcons.slice(0, root.opt("maxWorkspaceIcons"))
+                                        comparisonMode: ObjectComparison.Structure
                                     }
                                     delegate: Item {
                                         width: root.appIconSize
@@ -1140,6 +1141,7 @@ BasePill {
                                 Repeater {
                                     model: ScriptModel {
                                         values: loadedIcons.slice(0, root.opt("maxWorkspaceIcons"))
+                                        comparisonMode: ObjectComparison.Structure
                                     }
                                     delegate: Item {
                                         width: root.appIconSize
