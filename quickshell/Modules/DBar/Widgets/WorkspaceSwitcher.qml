@@ -83,7 +83,7 @@ BasePill {
 
     function getWorkspaceIcons(ws) {
         _desktopEntriesUpdateTrigger;
-        if (!root.opt("showWorkspaceApps") || !ws || !root.useNativeWorkspaces || ws.placeholder) {
+        if (!root.opt("showWorkspaceApps") || !ws || !root.useNativeWorkspaces || ws.placeholder || !IconThemeService.ready) {
             return [];
         }
 
@@ -1282,6 +1282,8 @@ BasePill {
                 }
                 readonly property var rootCurrentWorkspace: root.currentWorkspace
                 onRootCurrentWorkspaceChanged: updateAllData()
+                readonly property bool iconIndexReady: IconThemeService.ready
+                onIconIndexReadyChanged: updateAllData()
                 Connections {
                     target: SettingsData
                     function onBarConfigsChanged() {
