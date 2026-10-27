@@ -43,6 +43,7 @@ Variants {
                         id: background
                         anchors.fill: parent
                         screenName: scope.modelData.name
+                        asynchronous: true
                     }
 
                     LockBackgroundSampler {
