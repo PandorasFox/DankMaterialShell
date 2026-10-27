@@ -31,7 +31,7 @@ Item {
         const config = dockApps?.surfaceContext?.config;
         const magnified = config?.magnification ? config.magnificationScale / 100 : 1;
         const enlarged = options?.enlargeOnHover ? (options?.enlargePercentage ?? 125) / 100 : 1;
-        return Math.max(1, magnified, enlarged);
+        return Math.max(1, magnified * enlarged);
     }
     readonly property bool indicatorAtFarEdge: root.options.position === SettingsData.Position.Bottom || root.options.position === SettingsData.Position.Right
     readonly property bool indicatorInPadding: !(root.dockApps?.barHosted ?? false)
