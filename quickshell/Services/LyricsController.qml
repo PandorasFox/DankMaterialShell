@@ -26,6 +26,8 @@ QtObject {
     readonly property int duration: Math.round(track?.length ?? 0)
     readonly property real position: player?.position ?? 0
     readonly property string busName: player?.dbusName ?? ""
+    readonly property string offsetKey: track ? JSON.stringify([(track.artist ?? "").trim().toLowerCase(), (track.title ?? "").trim().toLowerCase()]) : ""
+    readonly property real offset: SessionData.lyricsOffsets[offsetKey] ?? 0
 
     property var lines: []
     property var plainLines: []
@@ -49,7 +51,7 @@ QtObject {
     property bool refreshPending: false
     property int requestedDuration: 0
     property var requestId: null
-    readonly property bool staleDuration: duration !== requestedDuration && state !== "ready" && state !== "instrumental"
+    readonly property bool staleDuration: duration !== requestedDuration
     property int serial: 0
     property real anchorPosition: 0
     property real anchorWall: 0
@@ -82,10 +84,12 @@ QtObject {
         resume();
     }
     onStaleDurationChanged: {
-        if (!enabled || !staleDuration)
+        if (!enabled || !staleDuration || requestedKey !== trackKey)
             return;
+        refreshPending = holdsSong();
         requestDelay.restart();
     }
+    onOffsetChanged: resync()
     onEmbeddedTextChanged: {
         if (enabled && (state === "none" || state === "error"))
             useEmbeddedText(state);
@@ -382,19 +386,45 @@ QtObject {
         const line = lines[index];
         if (!line || !Number.isFinite(line.t))
             return false;
-        player.position = Math.max(0.1, Math.min(line.t, duration * 0.99));
+        player.position = Math.max(0.1, Math.min(line.t - offset, duration * 0.99));
         reanchor();
         return true;
     }
 
     function currentTime() {
+        return playbackTime() + offset;
+    }
+
+    function nudge(seconds) {
+        if (offsetKey !== "")
+            SessionData.setLyricsOffset(offsetKey, seconds === 0 ? 0 : offset + seconds);
+    }
+
+    function refetch() {
+        if (!enabled || !DMSService.capabilities.includes("lyrics.forget") || requestedKey === "")
+            return false;
+        const snapshot = track;
+        backend.sendRequest("lyrics.forget", {
+            "title": snapshot?.title || "",
+            "artist": snapshot?.artist || "",
+            "album": snapshot?.album || "",
+            "duration": requestedDuration,
+            "providers": MediaOptions.enabledLyricsProviders
+        }, () => {
+            root.refreshPending = root.holdsSong();
+            root.request();
+        });
+        return true;
+    }
+
+    function playbackTime() {
         if (!anchorPlaying)
             return anchorPosition;
         return anchorPosition + (Date.now() - anchorWall) * anchorRate / 1000;
     }
 
     function updatePlaybackClock() {
-        const predicted = currentTime();
+        const predicted = playbackTime();
         const sampled = position + (anchorPlaying ? (Date.now() - positionWall) * anchorRate / 1000 : 0);
         const pendingSeek = !stopped && anchorUpdate.running && Math.abs(sampled - predicted) >= DashMetrics.mediaLyricsPositionTolerance;
         anchorUpdate.stop();
@@ -430,7 +460,7 @@ QtObject {
         const advanced = previous.position + (wall - previous.wall) * rate / 1000;
         if (Math.abs(observed - advanced) > DashMetrics.mediaLyricsPositionProbeDrift)
             return;
-        if (Math.abs(observed - currentTime()) < DashMetrics.mediaLyricsPositionProbeThreshold)
+        if (Math.abs(observed - playbackTime()) < DashMetrics.mediaLyricsPositionProbeThreshold)
             return;
         anchorPosition = observed;
         anchorWall = wall;
@@ -441,7 +471,7 @@ QtObject {
 
     // pear-desktop floors Position to whole seconds on pause, resume and track events.
     function flooredEcho() {
-        const lead = currentTime() - position;
+        const lead = playbackTime() - position;
         const whole = Math.abs(position - Math.round(position)) < DashMetrics.mediaLyricsWholeSecondSlack;
         return whole && lead >= 0 && lead < 1 + DashMetrics.mediaLyricsPositionTolerance;
     }
@@ -455,7 +485,7 @@ QtObject {
     function reanchor(force = true) {
         anchorUpdate.stop();
         const observed = player?.position ?? 0;
-        if (!force && anchorPlaying && Math.abs(observed - currentTime()) < DashMetrics.mediaLyricsPositionTolerance)
+        if (!force && anchorPlaying && Math.abs(observed - playbackTime()) < DashMetrics.mediaLyricsPositionTolerance)
             return false;
         anchorPosition = observed;
         anchorWall = Date.now();

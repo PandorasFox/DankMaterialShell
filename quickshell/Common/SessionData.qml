@@ -203,6 +203,17 @@ Singleton {
         };
     }
 
+    property var lyricsOffsets: ({})
+
+    function setLyricsOffset(key, seconds) {
+        const offsets = Object.assign({}, lyricsOffsets);
+        if (Math.abs(seconds) < 0.001)
+            delete offsets[key];
+        else
+            offsets[key] = Math.round(seconds * 1000) / 1000;
+        set("lyricsOffsets", offsets);
+    }
+
     function clearMonitorScrollPosition(screenName) {
         var newPositions = Object.assign({}, monitorScrollPositions);
         delete newPositions[screenName];

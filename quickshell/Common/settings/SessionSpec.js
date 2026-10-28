@@ -285,6 +285,9 @@ var LOCAL_SPEC = {
     },
     showConfigReloadToast: {
         def: true
+    },
+    lyricsOffsets: {
+        def: {}
     }
 };
 

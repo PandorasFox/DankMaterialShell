@@ -662,6 +662,27 @@ Item {
     }
 
     IpcHandler {
+        function offset(seconds: string): string {
+            const delta = Number(seconds);
+            if (!Number.isFinite(delta))
+                return "ERROR: offset needs seconds, e.g. 0.25 or -0.5";
+            LyricsService.controller.nudge(delta);
+            return `LYRICS_OFFSET: ${LyricsService.controller.offset}`;
+        }
+
+        function resetOffset(): string {
+            LyricsService.controller.nudge(0);
+            return "LYRICS_OFFSET: 0";
+        }
+
+        function refetch(): string {
+            return LyricsService.controller.refetch() ? "LYRICS_REFETCH_STARTED" : "LYRICS_REFETCH_UNAVAILABLE";
+        }
+
+        target: "lyrics"
+    }
+
+    IpcHandler {
         function toggle(provider: string): string {
             if (!provider)
                 return "ERROR: No provider specified";

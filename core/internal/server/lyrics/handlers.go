@@ -19,6 +19,9 @@ func HandleRequest(conn *ipc.ConnWriter, req ipc.Request) {
 	switch req.Method {
 	case "lyrics.get":
 		handleGet(conn, req)
+	case "lyrics.forget":
+		client.Forget(lookupRequest(req))
+		conn.Respond(req.ID, true)
 	default:
 		conn.RespondError(req.ID, fmt.Sprintf("unknown method: %s", req.Method))
 	}
@@ -61,7 +64,7 @@ func lowPriority(fetch corelyrics.Fetcher) corelyrics.Fetcher {
 	}
 }
 
-func handleGet(conn *ipc.ConnWriter, req ipc.Request) {
+func lookupRequest(req ipc.Request) corelyrics.Request {
 	var providers []corelyrics.Provider
 	if _, configured := req.Params["providers"]; configured {
 		providers = []corelyrics.Provider{}
@@ -69,7 +72,7 @@ func handleGet(conn *ipc.ConnWriter, req ipc.Request) {
 			providers = append(providers, corelyrics.Provider(id))
 		}
 	}
-	result, err := client.Lookup(context.Background(), corelyrics.Request{
+	return corelyrics.Request{
 		Title:     params.StringOpt(req.Params, "title", ""),
 		Artist:    params.StringOpt(req.Params, "artist", ""),
 		Album:     params.StringOpt(req.Params, "album", ""),
@@ -77,7 +80,11 @@ func handleGet(conn *ipc.ConnWriter, req ipc.Request) {
 		FileURL:   params.StringOpt(req.Params, "fileUrl", ""),
 		CacheOnly: !params.BoolOpt(req.Params, "allowNetwork", false),
 		Providers: providers,
-	})
+	}
+}
+
+func handleGet(conn *ipc.ConnWriter, req ipc.Request) {
+	result, err := client.Lookup(context.Background(), lookupRequest(req))
 	if err != nil {
 		conn.RespondError(req.ID, err.Error())
 		return
